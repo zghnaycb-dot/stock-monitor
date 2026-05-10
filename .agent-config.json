@@ -1,0 +1,48 @@
+{
+  "project": "stock-monitor",
+  "name": "股票监控分析系统",
+  "risk_level": "medium",
+  "version": "1.0.0",
+  "tools": {
+    "allowed": ["read", "edit", "write", "exec", "web_fetch"],
+    "restricted": {
+      "exec": ["rm", "del", "format", "fdisk"],
+      "web_fetch": ["http://*"]
+    }
+  },
+  "safety_gates": {
+    "confirm_required": [
+      "修改交易策略",
+      "删除交易记录",
+      "修改自选股列表",
+      "执行批量操作"
+    ],
+ "dual_verify": [
+      "修改 API 密钥",
+      "修改数据源配置"
+    ],
+    "blocked": [
+      "执行真实交易",
+      "访问系统文件",
+      "修改环境变量"
+    ]
+  },
+  "file_protection": {
+    "backup_before_edit": true,
+    "protected_patterns": [
+      "*.env",
+      "*config.json",
+      "trades.json",
+      "alerts.json"
+    ]
+  },
+  "api_limits": {
+    "sina_requests_per_minute": 30,
+    "akshare_requests_per_minute": 20
+  },
+  "logging": {
+    "level": "info",
+    "file": "logs/agent.log",
+    "max_size": "10MB"
+  }
+}
