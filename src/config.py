@@ -3,6 +3,8 @@
 换 AI Provider 只需改这里
 """
 
+import os
+
 # ── AI 模型配置 ──────────────────────────────────────────
 # 可选: "deepseek", "zhipu", "siliconflow"
 AI_PROVIDER = "zhipu"          # ✅ 已在用智谱 GLM-4-Flash（国内稳定，有免费额度）
@@ -13,7 +15,8 @@ DEEPSEEK_BASE_URL = "https://api.deepseek.com"
 DEEPSEEK_MODEL = "deepseek-chat"
 
 # 智谱 GLM-4-Flash (open.bigmodel.cn) ✅ 推荐，国内访问稳定
-ZHIPU_API_KEY = "1a2b78d8b2b14700b3d38c848c01d6bc.w16KoTtTBJ0XHkyX"
+# 从环境变量读取，如果没有则使用默认值（本地开发）
+ZHIPU_API_KEY = os.getenv("ZHIPU_API_KEY", "YOUR_ZHIPU_API_KEY")
 ZHIPU_MODEL = "glm-4-flash"
 
 # SiliconFlow (聚合多家模型)

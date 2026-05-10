@@ -42,7 +42,7 @@ class AIClient:
         elif self.provider == "zhipu":
             key = getattr(config, "ZHIPU_API_KEY", "")
             if not key or key.startswith("YOUR_"):
-                raise ValueError("Configure Zhipu API Key in src/config.py")
+                raise ValueError("Zhipu API Key not configured. Set ZHIPU_API_KEY environment variable.")
             self._client = OpenAI(api_key=key, base_url="https://open.bigmodel.cn/api/paas/v4")
             self._model  = config.ZHIPU_MODEL
 
