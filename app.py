@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 A股/港股 股票监控分析系统 v3 (Clean)
 自选股管理 + 实时行情 + 技术分析 + 智能信号 + AI分析
@@ -95,6 +95,7 @@ from stock_compare import render_compare_tab
 from sector_heatmap import render_sector_heatmap
 from market_sentiment import render_market_sentiment
 from support_resistance import render_support_resistance_tab
+from divergence import render_divergence_tab
 
 # ── 页面设置 ───────────────────────────────────────────────
 st.set_page_config(
@@ -483,8 +484,8 @@ if quotes:
                 st.caption("数据加载中...")
 
     # Tab 切换
-    tab_kline, tab_tech, tab_signal, tab_fund, tab_ai, tab_compare, tab_backtest, tab_sr, tab_sector, tab_sentiment = st.tabs(
-        ["📊 K线图", "📈 技术指标", "💡 智能信号", "📋 基本面", "🤖 AI分析", "🔄 股票对比", "📊 策略回测", "🎯 支撑/压力", "🏭 板块热力", "🌡️ 市场情绪"]
+    tab_kline, tab_tech, tab_signal, tab_fund, tab_ai, tab_compare, tab_backtest, tab_sr, tab_sector, tab_sentiment, tab_div = st.tabs(
+        ["📊 K线图", "📈 技术指标", "💡 智能信号", "📋 基本面", "🤖 AI分析", "🔄 股票对比", "📊 策略回测", "🎯 支撑/压力", "🏭 板块热力", "🌡️ 市场情绪", "🔍 背离/分型"]
     )
 
     # ── K线图 Tab ─────────────────────────────────────────
@@ -915,6 +916,10 @@ with tab_sector:
 # ── 市场情绪 Tab ─────────────────────────────────
 with tab_sentiment:
     render_market_sentiment()
+
+# ── 背离/分型 Tab ────────────────────────────────
+with tab_div:
+    render_divergence_tab(sel_code, sel_name, sel_q.get("current", 0))
 
 # ── 财经新闻 ─────────────────────────────────────────────
 if show_news:
