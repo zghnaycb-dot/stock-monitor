@@ -19,11 +19,12 @@ from typing import Optional, Dict, List, Tuple
 
 # ── 30分钟K线获取 ──────────────────────────────────────────
 
-def get_30min_kline(code: str, periods: int = 300) -> Optional[pd.DataFrame]:
+def get_kline(code: str, period: str = "30", periods: int = 300) -> Optional[pd.DataFrame]:
     """
-    获取30分钟K线数据（新浪分钟级接口，备用东方财富EM接口）
-    code:  6位股票代码（如 000001）
-    periods: 获取根数（默认300根≈60个交易日）
+    获取多级别K线数据（新浪分钟级接口，备用东方财富EM接口）
+    code:    6位股票代码（如 000001）
+    period:  "1"/"5"/"15"/"30"/"60"/"daily"
+    periods: 获取根数（默认300根）
     返回: DataFrame with columns [open, close, high, low, volume, timestamp]
     """
     try:
@@ -31,11 +32,42 @@ def get_30min_kline(code: str, periods: int = 300) -> Optional[pd.DataFrame]:
         market = "sh" if code.startswith("6") else "sz"
         sym = market + code
 
+        # 日线级别特殊处理
+        if period == "daily":
+            try:
+                df = ak.stock_zh_a_hist(symbol=code, period="daily", adjust="qfq")
+                if df is not None and not df.empty:
+                    col_map2 = {}
+                    for c in df.columns:
+                        cl = c.lower()
+                        if "日期" in c or "date" in cl:
+                            col_map2[c] = "timestamp"
+                        elif "开" in c or "open" in cl:
+                            col_map2[c] = "open"
+                        elif "收" in c or "close" in cl:
+                            col_map2[c] = "close"
+                        elif "高" in c or "high" in cl:
+                            col_map2[c] = "high"
+                        elif "低" in c or "low" in cl:
+                            col_map2[c] = "low"
+                        elif "成交量" in c or "volume" in cl:
+                            col_map2[c] = "volume"
+                    df = df.rename(columns=col_map2)
+                    df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
+                    for col in ["open", "close", "high", "low", "volume"]:
+                        if col in df.columns:
+                            df[col] = pd.to_numeric(df[col], errors="coerce")
+                    df = df.tail(periods).reset_index(drop=True)
+                    return df
+            except Exception:
+                pass
+            return None
+
         # 优先使用新浪接口（更稳定）
         df = None
         for _attempt in range(2):
             try:
-                df = ak.stock_zh_a_minute(symbol=sym, period="30")
+                df = ak.stock_zh_a_minute(symbol=sym, period=period)
                 break
             except Exception:
                 pass
@@ -45,7 +77,7 @@ def get_30min_kline(code: str, periods: int = 300) -> Optional[pd.DataFrame]:
             try:
                 df = ak.stock_zh_a_hist_min_em(
                     symbol=sym,
-                    period="30",
+                    period=period,
                     adjust="qfq",
                 )
             except Exception:
@@ -251,17 +283,31 @@ def detect_divergence(df: pd.DataFrame,
 
 def render_divergence_tab(code: str, name: str, current_price: float = 0):
     """
-    在 Streamlit Tab 中渲染 30分钟级别背离 & 分型分析结果。
+    在 Streamlit Tab 中渲染多级别背离 & 分型分析结果。
     调用方式：render_divergence_tab(sel_code, sel_name, current_price)
     """
     import streamlit as st
 
-    st.markdown(f"### 🔍 30分钟级别 · 顶底背离 & 分型分析")
-    st.caption(f"股票：**{name}**（`{code}`）| 周期：30分钟 | 当前价：{current_price:.2f}" if current_price else
-               f"股票：**{name}**（`{code}`）| 周期：30分钟")
+    # ── 级别选择 ──────────────────────────────────────────
+    period_options = {
+        "1分钟": "1",
+        "5分钟": "5",
+        "15分钟": "15",
+        "30分钟": "30",
+        "60分钟": "60",
+        "日线": "daily",
+    }
+    col_sel, col_info = st.columns([1, 2])
+    with col_sel:
+        sel_label = st.selectbox("选择分析级别", list(period_options.keys()), index=3, key="div_period_select")
+    period = period_options[sel_label]
 
-    with st.spinner("正在获取30分钟K线数据..."):
-        df = get_30min_kline(code, periods=300)
+    st.markdown(f"### 🔍 {sel_label}级别 · 顶底背离 & 分型分析")
+    st.caption(f"股票：**{name}**（`{code}`）| 周期：{sel_label} | 当前价：{current_price:.2f}" if current_price else
+               f"股票：**{name}**（`{code}`）| 周期：{sel_label}")
+
+    with st.spinner(f"正在获取{sel_label}K线数据..."):
+        df = get_kline(code, period=period, periods=300)
 
     if df is None or df.empty:
         st.error("⚠️ 无法获取30分钟K线数据，请检查股票代码或网络（需要 akshare 能访问东方财富）")
@@ -355,7 +401,7 @@ def render_divergence_tab(code: str, name: str, current_price: float = 0):
 
     # ── K线图（Plotly）──────────────────────────────────
     st.markdown("---")
-    st.markdown("#### 📊 30分钟K线图（标注分型 & 背离）")
+    st.markdown(f"#### 📊 {sel_label}K线图（标注分型 & 背离）")
 
     try:
         import plotly.graph_objects as go
